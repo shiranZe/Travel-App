@@ -4,17 +4,16 @@ import locService from './services/loc.service.js'
 import mapService from './services/map.service.js'
 import weatherService from './services/weather.service.js';
 
-
-
-
 locService.getLocs()
     .then(locs => console.log('locs', locs))
 
 window.onload = () => {
+
     mapService.initMap()
         .then(
             () => {
                 mapService.addMarker({ lat: 32.0749831, lng: 34.9120554 });
+
             }
         ).catch(console.warn);
 
@@ -23,16 +22,22 @@ window.onload = () => {
     locService.getPosition()
         .then(pos => {
             console.log('User position is:', pos.coords);
-            let currLat = pos.coords.latitude
-            let currLng = pos.coords.longitude
+            if (getLocByUrl('lat') && getLocByUrl('lng')) {
+                var currLat = getLocByUrl('lat')
+                var currLng = getLocByUrl('lng')
+            } else {
+                var currLat = pos.coords.latitude
+                var currLng = pos.coords.longitude
+            }
             locService.loadCurrLoc(currLat, currLng)
+
                 .then(location => {
                     console.log(location)
                     let currLoc = location[0].formatted_address
                     handleSearch(currLat, currLng, currLoc)
                 })
-
         })
+
 }
 
 document.querySelector('.btn-my-location').addEventListener('click', () => {
@@ -77,6 +82,7 @@ document.querySelector('.btn-copy').addEventListener('click', () => {
             console.log('User position is:', pos.coords);
             let currLat = pos.coords.latitude
             let currLng = pos.coords.longitude
+            copyToClipboard(currLat, currLng)
         })
 })
 
@@ -118,11 +124,23 @@ function renderWeather(weatherData) {
     document.querySelector('.weather-data').innerHTML = strHtml
 }
 
-function copyToClipboard (lat,lng) {
+function copyToClipboard(lat, lng) {
     var dummy = document.createElement("textarea");
     document.body.appendChild(dummy);
-    dummy.value = `lat:${lat}lng:${lng}`
+    dummy.value = `https://shiranze.github.io/Travel-App/index.html?lat=${lat}lng:=${lng}`
+    console.log(dummy.value)
     dummy.select();
-    document.execCommand("copy");
+    document.execCommand('copy');
     document.body.removeChild(dummy);
+
+}
+
+function getLocByUrl(name) {
+    var url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
